@@ -37,6 +37,11 @@ try:
 except ImportError:
     warnings.warn('scipy not installed. Kernel generation will not work')
 
+try:
+    from bottleneck import nanmedian
+except ImportError:
+    nanmedian = np.nanmedian
+
 # turn plotting off if matplotlib is not available
 try:
     import matplotlib.pyplot as plt
@@ -243,7 +248,7 @@ def fit_streak_profile(yarr, p0, fit_background=True, plot_streak=False,
         # if not fitting, subtract median using outer 50% of data
         ind = int(len(yarr) / 4)  # use to select outer quarter of data
         # estimate baseline level using outer 50% of channels
-        yarr_bkg = np.nanmedian(list(yarr)[:ind] + list(yarr)[-ind:])
+        yarr_bkg = nanmedian(list(yarr)[:ind] + list(yarr)[-ind:])
 
     yarr = yarr - yarr_bkg
 
@@ -298,8 +303,8 @@ def fit_streak_profile(yarr, p0, fit_background=True, plot_streak=False,
     if np.sum(sel) == 0:
         noise = 0
     else:
-        noise = np.nanmedian(np.abs(yarr[sel] -
-                                    np.nanmedian(yarr[sel]))) / 0.67449
+        noise = nanmedian(np.abs(yarr[sel] -
+                                    nanmedian(yarr[sel]))) / 0.67449
 
     # use amplitude and noise to re-estimate snr
     snr = (peak - noise) / noise
@@ -470,7 +475,7 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
         with warnings.catch_warnings():
             warnings.filterwarnings(action='ignore',
                                     message='All-NaN slice encountered')
-            medarr = np.nanmedian(subregion, axis=1)
+            medarr = nanmedian(subregion, axis=1)
 
         # get number of pixels being considered at each point; remove those
         # that are too small such that median unreliable
@@ -482,7 +487,7 @@ def filter_sources(image, streak_positions, plot_streak=False, buffer=100,
 
         if plot_streak and (plt is not None):
             fig, (ax1, ax2) = plt.subplots(1, 2)
-            mad = np.nanmedian(np.abs(subregion))
+            mad = nanmedian(np.abs(subregion))
             ax2.imshow(subregion, vmin=-mad, vmax=5*mad, origin='lower')
             ax2.plot([0, subregion.shape[1] - 1], [dy_streak, dy_streak], '--',
                      lw=2, color='magenta', alpha=0.4)
@@ -812,7 +817,7 @@ def streak_persistence(cutout, dx, streak_y0, streak_stdev, max_width=None,
         with warnings.catch_warnings():
             warnings.filterwarnings(action='ignore',
                                     message='All-NaN slice encountered')
-            chunk = np.nanmedian(cutout[:, ind0:ind1], axis=1)
+            chunk = nanmedian(cutout[:, ind0:ind1], axis=1)
 
         if plot_streak and (plt is not None):
             fig, ax = plt.subplots()
@@ -1010,7 +1015,7 @@ def rot_med(image, angle, return_length):
         This is only returned if ``return_length`` is `True`.
 
     '''
-    return _rot(image, angle, return_length, np.nanmedian)
+    return _rot(image, angle, return_length, nanmedian)
 
 
 # TODO: If radon performance is improved upstream, we should just use
@@ -1148,7 +1153,7 @@ def radon(image, theta=None, circle=False, *, preserve_range=False,
                 radon_image[:, i] = np.nansum(rotated, axis=0)
             else:
                 median_time_0 = time.time()
-                radon_image[:, i] = np.nanmedian(rotated, axis=0)
+                radon_image[:, i] = nanmedian(rotated, axis=0)
                 median_time_1 = time.time()
                 total_median_time += (median_time_1 - median_time_0)
             lengths[:, i] = np.sum(np.isfinite(rotated), axis=0)
