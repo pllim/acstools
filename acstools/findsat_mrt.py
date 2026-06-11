@@ -109,10 +109,9 @@ from acstools.utils_findsat_mrt import (create_mask, filter_sources,
                                         update_dq)
 
 try:
-    from bottleneck import nanmedian, nansum
+    from bottleneck import nanmedian
 except ImportError:
     nanmedian = np.nanmedian
-    nansum = np.nansum
 
 # test for matplotlib, turn off plotting if it does not exist
 try:
@@ -1395,7 +1394,7 @@ class WfcWrapper(TrailFinder):
         with warnings.catch_warnings():
             warnings.filterwarnings(action='ignore',
                                     message='All-NaN slice encountered')
-            self.image = block_reduce(self.image, self.binsize, func=nansum)
+            self.image = block_reduce(self.image, self.binsize, func=np.nansum)
 
     def run_preprocess(self):
         '''
