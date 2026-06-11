@@ -38,9 +38,13 @@ except ImportError:
     warnings.warn('scipy not installed. Kernel generation will not work')
 
 try:
-    from bottleneck import nanmedian
+    from bottleneck import nanargmax, nanmax, nanmean, nanmedian, nansum
 except ImportError:
+    nanargmax = np.nanargmax
+    nanmax = np.nanmax
+    nanmean = np.nanmean
     nanmedian = np.nanmedian
+    nansum = np.nansum
 
 # turn plotting off if matplotlib is not available
 try:
@@ -256,7 +260,7 @@ def fit_streak_profile(yarr, p0, fit_background=True, plot_streak=False,
 
     # update initial guesses if necessary
     if amp0 is None:
-        amp0 = np.nanmax(yarr)
+        amp0 = nanmax(yarr)
     if stdev0 is None:
         stdev0 = 5.
 
@@ -289,14 +293,14 @@ def fit_streak_profile(yarr, p0, fit_background=True, plot_streak=False,
     if np.sum(sel) == 0:
         peak = 0
     else:
-        peak = np.nanmax(yarr[sel])
+        peak = nanmax(yarr[sel])
 
     # measure mean flux within the standard deviation
     sel = (xarr > (g.mean - g.stddev)) & (xarr < (g.mean + g.stddev))
     if np.sum(sel) == 0:
         mean_flux = 0
     else:
-        mean_flux = np.nanmean(yarr[sel])
+        mean_flux = nanmean(yarr[sel])
 
     # measure noise outside the profile. Using median abs dev to avoid outliers
     sel = (xarr < lower) | (xarr > upper)
@@ -304,7 +308,7 @@ def fit_streak_profile(yarr, p0, fit_background=True, plot_streak=False,
         noise = 0
     else:
         noise = nanmedian(np.abs(yarr[sel] -
-                                    nanmedian(yarr[sel]))) / 0.67449
+                                 nanmedian(yarr[sel]))) / 0.67449
 
     # use amplitude and noise to re-estimate snr
     snr = (peak - noise) / noise
@@ -990,7 +994,7 @@ def rot_sum(image, angle, return_length):
         This is only returned if ``return_length`` is `True`.
 
     '''
-    return _rot(image, angle, return_length, np.nansum)
+    return _rot(image, angle, return_length, nansum)
 
 
 def rot_med(image, angle, return_length):
@@ -1150,7 +1154,7 @@ def radon(image, theta=None, circle=False, *, preserve_range=False,
             warp_time_1 = time.time()
             total_warp_time += (warp_time_1 - warp_time_0)
             if median is False:
-                radon_image[:, i] = np.nansum(rotated, axis=0)
+                radon_image[:, i] = nansum(rotated, axis=0)
             else:
                 median_time_0 = time.time()
                 radon_image[:, i] = nanmedian(rotated, axis=0)
@@ -1392,10 +1396,10 @@ def create_mrt_line_kernel(width, sigma, outfile=None, shape=(1024, 2048),
 
     # find the center of the signal by summing along each direction and finding
     # the max.
-    rt_rho = np.nansum(rt, axis=1)
-    rt_theta = np.nansum(rt, axis=0)
-    rho0 = np.nanargmax(rt_rho)
-    theta0 = np.nanargmax(rt_theta)
+    rt_rho = nansum(rt, axis=1)
+    rt_theta = nansum(rt, axis=0)
+    rho0 = nanargmax(rt_rho)
+    theta0 = nanargmax(rt_theta)
 
     # plot the 1D slices
     if ax:
